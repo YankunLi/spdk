@@ -355,6 +355,8 @@ tcp_load_psk(const char *fname, char *buf, size_t bufsz)
 	return 0;
 }
 
+#define CONTROLLER_NAME_MAX_LEN 64
+
 static void
 rpc_bdev_nvme_attach_controller(struct spdk_jsonrpc_request *request,
 				const struct spdk_json_val *params)
@@ -389,6 +391,16 @@ rpc_bdev_nvme_attach_controller(struct spdk_jsonrpc_request *request,
 						 "spdk_json_decode_object failed");
 		goto cleanup;
 	}
+
+              if (strnlen(ctx->req.name, CONTROLLER_NAME_MAX_LEN) == CONTROLLER_NAME_MAX_LEN) {
+                              spdk_jsonrpc_send_error_response(request, -EINVAL, "name too long: %s", ctx->req.name);
+                              goto cleanup;
+              }
+
+              if (strnlen(ctx->req.name, CONTROLLER_NAME_MAX_LEN) == 0) {
+                              spdk_jsonrpc_send_error_response(request, -EINVAL, "name cannot be empty");
+                              goto cleanup;
+              }
 
 	if (ctx->req.max_bdevs == 0) {
 		spdk_jsonrpc_send_error_response(request, -EINVAL, "max_bdevs cannot be zero");
